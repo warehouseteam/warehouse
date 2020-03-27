@@ -83,7 +83,7 @@ class MySql {
             foreach($select as $col) {
                $cols .= "`{$col}`,";        //concantenating all columns
             }
-            $select = substr($cols, 0, -1);  // get first nad last from $cols
+            $select = substr($cols, 0, -1);
         }
         $sql = sprintf("SELECT %s FROM %s%s", $select, $table, self::extra());
         self::set('last_query', $sql);
@@ -109,6 +109,46 @@ class MySql {
         mysqli_free_result($result);
         return $data;
 }
+
+    public function insert($table, $data) {
+    $link =& self::connection();
+    $fields = '';
+    $values = '';
+    foreach($data as $col => $value) {
+        $fields .= sprintf("`%s`,", $col);
+        $values .= sprintf("'%s,", mysqli_real_escape_string($value));
+    }
+    $fields = substr($fields, 0, -1);
+    $values = substr($values, 0, -1);
+    $sql = sprintf("INSERT INTO %s (%s) VALUES (%s)", $table, $fields, $values);
+    self::set('last_query', $sql);
+    if(!mysqli_query($sql)) {
+        throw new Exception('Error executing MySQL query: '.$sql.'. MySQL error '.mysqli_errno().': '.mysqli_error());
+    }else {
+        self::set('insert_id', mysqli_insert_id());
+        return true;
+    }
+}
+
+    public function update($table, $info) {
+    if($empty(self::where)) {
+        throw new Exception("Where is not set. Cannot update table");
+    }else
+        $link =& self::connection();
+        $update = ' ';
+        foreach($nfo as $col => $value) {
+            $update .= sprintf("`%s`='%s', ", $col, mysqli_real_escape_string($value));
+        }
+        $update = substr($update, 0, -2);
+        $sql = sptintf("UPDATE %s SET %s%s", $table, $update, self::extra());
+        self::set('last_query', $sql);
+        if(!mysqli_query($sql)) {
+            throw new Exception('Error executing MySQL query: '.$sql.'. MySQL error '.mysqli_errno().': '.mysqli_error());
+        }else {
+            return true;
+        }
+}
+
 
 
 
